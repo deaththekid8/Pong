@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script src="dynamics.js"></script>
+
+<script>
+var canvas;		//Zeichenfläche
+var context;	//Zeichenwerkzeuge
+var scale = 100;      //Leben
+var scale2 = 100;
+var redBall;	//Spielfigur
+var player2;
+var blueBall;
+var greenBox;
+var obsticle;
+var greenBox2;
+var obsticle2;
+var wall;
+var wallu;
+var wallr;
+var floorBox;
+var background;
+var gravity = new Vector(0,0);
+
+
+function init() {
+	canvas = document.getElementById("world");
+	context = canvas.getContext("2d");
+	
+	canvas.addEventListener("keydown", handleKeydown);
+	canvas.addEventListener("keyup", handleKeyup);
+	canvas.focus() <!-- siehe tabindex im body -->;
+	
+	var img = new Image();
+	img.src = "pixilart-drawing.png";
+
+	var imgs = new Image();
+	imgs.src = "Slime.png";
+
+	var img2 = new Image();
+	img2.src = "pixilart-drawing1.png"
+	
+	var backImg = new Image();
+	backImg.src = "background.jpg";
+	
+	redBall = new CircularSprite(img,50, new Vector(50,530));
+	player2 = new CircularSprite(img2,50, new Vector(1230,530));
+	blueBall = new CircularSprite(imgs,50, new Vector(640,360));
+	blueBall.velocity = new Vector(0,-300); 
+	
+	
+
+	greenBox2 = new Box(50,100, new Vector(1230,568));
+	greenBox2.color = "white";
+
+	obsticle2 = new Box(50,100, new Vector(1230,200));
+	obsticle2.color = "white";
+
+	greenBox = new Box(50,100, new Vector(0,568));
+	greenBox.color = "black";
+
+	obsticle = new Box(50,100, new Vector(0,200));
+	obsticle.color = "black";
+
+	wall =new Box(0,canvas.height,new Vector(0,0));
+
+	wallu =new Box(canvas.width,0,new Vector(0,0));
+
+	wallr =new Box(0,canvas.height,new Vector(canvas.width,0));
+	
+	floorBox = new Box(canvas.width,0, new Vector(0,canvas.height));
+
+	background = new RectangularSprite(backImg,canvas.width,canvas.height,new Vector(0,0));
+	
+	// zusätzliche Attribute der Spielfigur
+	redBall.speedsRight = false;
+	redBall.speedsLeft = false;
+	redBall.speedsUp = false;
+	redBall.speedsDown = false;
+	redBall.speed = 500;
+	redBall.jumps = false;
+	redBall.jumpSpeed = 0;
+	player2.speedsRight = false;
+	player2.speedsLeft = false;
+	player2.speedsUp = false;
+	player2.speedsDown = false;
+	player2.speed = 500;
+	player2.jumps = false;
+	player2.jumpSpeed = 0;
+}
+
+function update(elapsed) {
+
+	if (scale ==0 || scale2 ==0)return;
+
+	redBall.move(elapsed,gravity);
+	player2.move(elapsed);
+	blueBall.move(elapsed,gravity);
+	
+	floorBox.reflectBall(blueBall);
+	if (greenBox.reflectBall(blueBall)||(obsticle.reflectBall(blueBall))){
+		scale = scale-10;
+	}
+
+	if (greenBox2.reflectBall(blueBall)||(obsticle2.reflectBall(blueBall))){
+		scale2 = scale2-10;
+	}
+	
+	if (wall.reflectBall(blueBall)){
+		blueBall.velocity.x *=0.5;
+	}
+
+	if (wallu.reflectBall(blueBall)){
+		blueBall.velocity.x *=0.5;
+	}
+	if (wallr.reflectBall(blueBall)){
+		blueBall.velocity.x *=0.5;
+	}
+
+	if (floorBox.reflectBall(redBall) | greenBox.reflectBall(redBall)| wall.reflectBall(redBall)|wallu.reflectBall(redBall)|wallr.reflectBall(redBall)|obsticle.reflectBall(redBall)|greenBox.reflectBall(redBall)|obsticle2.reflectBall(redBall)|greenBox2.reflectBall(redBall)) {
+		redBall.velocity.x = 0;
+		redBall.velocity.y = 0;
+	}
+	if (floorBox.reflectBall(player2) | greenBox.reflectBall(player2)| wall.reflectBall(player2)|wallu.reflectBall(player2)|wallr.reflectBall(player2)|obsticle.reflectBall(player2)|greenBox.reflectBall(player2)|obsticle2.reflectBall(player2)|greenBox2.reflectBall(player2)) {
+		player2.velocity.x = 0;
+		player2.velocity.y = 0;
+	}
+
+	if (redBall.collidesWith(blueBall)) {
+		redBall.exchangeElasticImpulseWith(blueBall);
+	}
+	
+	if (player2.collidesWith(blueBall)) {
+		player2.exchangeElasticImpulseWith(blueBall);
+	}
+	
+	if (redBall.speedsRight && !redBall.jumps) { 
+		redBall.velocity.x = redBall.speed;
+	}
+	if (redBall.speedsLeft && !redBall.jumps) { 
+		redBall.velocity.x = -redBall.speed;
+	}
+	if (redBall.speedsDown && !redBall.jumps) { 
+		redBall.velocity.y = redBall.speed;
+	}
+	if (redBall.speedsUp && !redBall.jumps) { 
+		redBall.velocity.y = -redBall.speed;
+	}
+	if (!redBall.speedsUp && !redBall.speedsDown 
+			&& !redBall.speedsLeft && !redBall.speedsRight) {
+		redBall.velocity.x = 0;
+		redBall.velocity.y = 0;
+	}
+	if (player2.speedsRight && !player2.jumps) { 
+		player2.velocity.x = player2.speed;
+	}
+	if (player2.speedsLeft && !player2.jumps) { 
+		player2.velocity.x = -player2.speed;
+	}
+	if (player2.speedsDown && !player2.jumps) { 
+		player2.velocity.y = player2.speed;
+	}
+	if (player2.speedsUp && !player2.jumps) { 
+		player2.velocity.y = -player2.speed;
+	}
+	if (!player2.speedsUp && !player2.speedsDown 
+			&& !player2.speedsLeft && !player2.speedsRight) {
+		player2.velocity.x = 0;
+		player2.velocity.y = 0;
+	}
+}
+
+function paint() {
+	if (scale==0){
+		context.fillStyle = "lightblue";
+	context.fillRect(0,0,canvas.width,canvas.height);	
+	context.font = "48px serif";
+	context.fillStyle = 'white';
+	context.fillText("Player 1 win", 10, 50);
+	} 
+	else if (scale2==0){}
+	else{
+	context.fillStyle = "lightblue";
+	context.fillRect(0,0,canvas.width,canvas.height);
+	background.draw(context);
+	redBall.draw(context);
+	player2.draw(context);
+	blueBall.draw(context);
+	greenBox.draw(context);
+	obsticle.draw(context);
+	greenBox2.draw(context);
+	obsticle2.draw(context);
+	context.font = "48px serif";
+	context.fillStyle = 'white';
+	context.fillText(scale, 10, 50);
+	context.fillText(scale2, 1200,50);}
+}
+
+// Game Loop:
+var previous, elapsed;
+function frame(timestamp) {
+	if (!previous) previous = timestamp;
+	elapsed = timestamp - previous;
+	update(elapsed/1000);
+	paint();
+	previous = timestamp;
+	window.requestAnimationFrame(frame);
+}
+
+
+<!-- Tastatursteuerung beim Herunterdrücken -->
+function handleKeydown(event) {
+  let key = event.key || event.keyCode;
+  let hasHandled = true;
+  switch (key) {
+	case "ArrowDown":  
+		if (!player2.jumps) player2.speedsDown = true;
+		break;
+	case "ArrowUp":
+		if (!player2.jumps) player2.speedsUp = true;
+		break;
+    case "ArrowLeft":  
+		if (!player2.jumps) player2.speedsLeft = true;
+		break;
+    case "ArrowRight":
+		if (!player2.jumps) player2.speedsRight = true;
+		break;
+	case "s":  
+		if (!redBall.jumps) redBall.speedsDown = true;
+		break;
+	case "w":
+		if (!redBall.jumps) redBall.speedsUp = true;
+		break;
+    case "a":  
+		if (!redBall.jumps) redBall.speedsLeft = true;
+		break;
+    case "d":
+		if (!redBall.jumps) redBall.speedsRight = true;
+		break;
+    case "Enter":
+		// "enter" bzw. "return"
+		break;
+    case "Escape":
+		// "esc"
+		break;
+    default: //jede andere Taste
+		hasHandled = false;
+  }
+  if (hasHandled) event.preventDefault();
+};
+
+<!-- Tastatursteuerung beim Loslassen -->
+function handleKeyup(event) {
+  let key = event.key || event.keyCode;
+  let hasHandled = true;
+  switch (key) {
+	case "ArrowDown": 
+		player2.speedsDown = false;
+		break;
+	case "ArrowUp": 
+		player2.speedsUp = false;
+		break;
+    case "ArrowLeft":  
+		player2.speedsLeft = false;
+		break;
+    case "ArrowRight":
+		player2.speedsRight = false;
+		break;
+	case "s":
+		redBall.speedsDown = false;
+		break;
+	case "w":
+		redBall.speedsUp = false;
+		break;
+    case "a":  
+		redBall.speedsLeft = false;
+		break;
+    case "d":
+		redBall.speedsRight = false;
+		break;
+    case "Enter":
+		// "enter" bzw. "return"
+		break;
+    case "Escape":
+		// "esc"
+		break;
+    default: //jede andere Taste
+		hasHandled = false;
+  }
+  if (hasHandled) event.preventDefault();
+
+  
+};
+
+</script>
+</head>
+
+<body onload="init(); window.requestAnimationFrame(frame);" >
+	<canvas id="world" width="1280" height="720" tabindex="1" />
+	<!-- tabindex macht den canvas fokussierbar -->
+</body>
+
+</html>
+
+
+
+
+
+
+
